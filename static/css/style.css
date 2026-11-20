@@ -1,0 +1,206 @@
+/* =====================================================================
+   HOSTEL MAINTENANCE AND COMPLAINT TRACKER
+   Custom Styling & Responsive UI
+   ===================================================================== */
+
+:root {
+    --primary-color: #2563eb;
+    --primary-hover: #1d4ed8;
+    --secondary-color: #0ea5e9;
+    --dark-bg: #0f172a;
+    --card-bg: #ffffff;
+    --border-color: #e2e8f0;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --info-color: #3b82f6;
+    --sidebar-width: 260px;
+}
+
+body {
+    background-color: #f8fafc;
+    color: var(--text-main);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Navbar */
+.navbar-custom {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.brand-badge {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    font-weight: 700;
+    font-size: 0.8rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 9999px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+/* Cards & Elevate */
+.custom-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.custom-card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+}
+
+/* Metric KPI Cards */
+.kpi-card {
+    border-radius: 1rem;
+    padding: 1.25rem;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.kpi-card .kpi-icon {
+    font-size: 2.25rem;
+    opacity: 0.85;
+}
+
+.kpi-card .kpi-value {
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.kpi-card .kpi-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.kpi-primary { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); color: #1e40af; }
+.kpi-warning { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); color: #92400e; }
+.kpi-info { background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); color: #166534; }
+.kpi-success { background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); color: #065f46; }
+.kpi-danger { background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); color: #991b1b; }
+
+/* Status Badges */
+.badge-status-pending { background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.badge-status-assigned { background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+.badge-status-inprogress { background-color: #ede9fe; color: #6d28d9; border: 1px solid #ddd6fe; }
+.badge-status-completed { background-color: #d1fae5; color: #047857; border: 1px solid #a7f3d0; }
+.badge-status-resolved { background-color: #10b981; color: #ffffff; }
+.badge-status-rejected { background-color: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+
+/* Priority Badges */
+.badge-priority-urgent { background-color: #ef4444; color: white; font-weight: 700; animation: pulse 2s infinite; }
+.badge-priority-high { background-color: #f97316; color: white; }
+.badge-priority-medium { background-color: #3b82f6; color: white; }
+.badge-priority-low { background-color: #64748b; color: white; }
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.75; }
+}
+
+/* Timeline component */
+.workflow-timeline {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    padding: 1rem 0;
+    margin: 1.5rem 0;
+}
+
+.workflow-timeline::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 4%;
+    right: 4%;
+    height: 4px;
+    background-color: #e2e8f0;
+    transform: translateY(-50%);
+    z-index: 1;
+}
+
+.timeline-step {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.timeline-circle {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background-color: white;
+    border: 3px solid #cbd5e1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #94a3b8;
+    transition: all 0.3s ease;
+}
+
+.timeline-step.active .timeline-circle {
+    background-color: var(--primary-color);
+    border-color: #93c5fd;
+    color: white;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2);
+}
+
+.timeline-step.completed .timeline-circle {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+    color: white;
+}
+
+.timeline-label {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.timeline-step.active .timeline-label,
+.timeline-step.completed .timeline-label {
+    color: var(--text-main);
+    font-weight: 700;
+}
+
+/* Login Tabs */
+.login-tabs .nav-link {
+    border-radius: 0.75rem;
+    font-weight: 600;
+    padding: 0.75rem 1.25rem;
+    color: var(--text-muted);
+    border: 1px solid transparent;
+}
+
+.login-tabs .nav-link.active {
+    background: #2563eb;
+    color: white;
+    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3);
+}
+
+/* Footer */
+footer {
+    margin-top: auto;
+    background-color: #0f172a;
+    color: #94a3b8;
+    padding: 1.25rem 0;
+    font-size: 0.85rem;
+}

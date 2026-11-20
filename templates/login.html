@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In - Hostel Maintenance & Complaint Tracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center py-4">
+    <div class="col-12 col-md-8 col-lg-5">
+        <!-- Brand Header -->
+        <div class="text-center mb-4">
+            <div class="d-inline-flex p-3 bg-primary bg-opacity-10 text-primary rounded-circle mb-3">
+                <i class="bi bi-shield-check fs-1"></i>
+            </div>
+            <h2 class="fw-bold text-dark mb-1">HostelCare Tracker</h2>
+            <p class="text-muted small">Select your role below to access your maintenance portal</p>
+        </div>
+
+        <div class="custom-card p-4 shadow-sm">
+            <!-- Role Selection Tabs -->
+            <ul class="nav nav-pills nav-fill login-tabs mb-4 gap-2" id="loginRoleTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if active_tab == 'student' %}active{% endif %}" 
+                            id="student-tab" data-bs-toggle="pill" data-bs-target="#student-panel" 
+                            type="button" role="tab" onclick="setRole('Student')">
+                        <i class="bi bi-mortarboard-fill me-1"></i> Student
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if active_tab == 'warden' %}active{% endif %}" 
+                            id="warden-tab" data-bs-toggle="pill" data-bs-target="#warden-panel" 
+                            type="button" role="tab" onclick="setRole('Warden')">
+                        <i class="bi bi-person-badge-fill me-1"></i> Warden
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if active_tab == 'staff' %}active{% endif %}" 
+                            id="staff-tab" data-bs-toggle="pill" data-bs-target="#staff-panel" 
+                            type="button" role="tab" onclick="setRole('Staff')">
+                        <i class="bi bi-tools me-1"></i> Staff
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Unified Form -->
+            <form action="{{ url_for('login') }}" method="POST" id="loginForm">
+                <input type="hidden" name="role" id="selectedRoleInput" 
+                       value="{% if active_tab == 'warden' %}Warden{% elif active_tab == 'staff' %}Staff{% else %}Student{% endif %}">
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small text-secondary">Username / User ID</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-person-circle"></i></span>
+                        <input type="text" name="username" id="usernameInput" class="form-control border-start-0" 
+                               placeholder="Enter your username" required autofocus>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold small text-secondary">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-lock-fill"></i></span>
+                        <input type="password" name="password" id="passwordInput" class="form-control border-start-0" 
+                               placeholder="Enter your password" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2">
+                    <span>Sign In to Dashboard</span>
+                    <i class="bi bi-arrow-right"></i>
+                </button>
+            </form>
+
+            <hr class="my-4 text-muted">
+
+            <!-- Quick Demo Credentials Box (Extremely helpful for evaluation / 1st time user) -->
+            <div class="bg-light p-3 rounded-3 border">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold small text-dark"><i class="bi bi-key-fill text-warning me-1"></i> Quick Test Credentials:</span>
+                    <small class="text-muted">(Click to autofill)</small>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm small py-1" onclick="fillCreds('medha', 'medha@1', 'Student')">
+                        Student: medha
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm small py-1" onclick="fillCreds('nishmitha', 'nishmitha@2', 'Student')">
+                        Student: nishmitha
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm small py-1" onclick="fillCreds('akash', 'akash@3', 'Student')">
+                        Student: akash
+                    </button>
+                    <button type="button" class="btn btn-outline-warning btn-sm small py-1 text-dark" onclick="fillCreds('rashmi', 'rashmi@01', 'Warden')">
+                        Warden: rashmi
+                    </button>
+                    <button type="button" class="btn btn-outline-warning btn-sm small py-1 text-dark" onclick="fillCreds('manohar', 'manohar@02', 'Warden')">
+                        Warden: manohar
+                    </button>
+                    <button type="button" class="btn btn-outline-success btn-sm small py-1" onclick="fillCreds('manvith', 'manvith@01', 'Staff')">
+                        Staff: manvith (Plumbing)
+                    </button>
+                    <button type="button" class="btn btn-outline-success btn-sm small py-1" onclick="fillCreds('ramesh', 'ramesh@02', 'Staff')">
+                        Staff: ramesh (Electrical)
+                    </button>
+                    <button type="button" class="btn btn-outline-success btn-sm small py-1" onclick="fillCreds('sandhya', 'sandhya@03', 'Staff')">
+                        Staff: sandhya (Cleaning)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-3 text-muted small">
+            <i class="bi bi-shield-lock-fill text-success me-1"></i> Connected to live MySQL database engine
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function setRole(roleName) {
+        document.getElementById('selectedRoleInput').value = roleName;
+    }
+
+    function fillCreds(user, pass, role) {
+        document.getElementById('usernameInput').value = user;
+        document.getElementById('passwordInput').value = pass;
+        setRole(role);
+
+        // Switch active tab visually
+        const tabMap = { 'Student': 'student-tab', 'Warden': 'warden-tab', 'Staff': 'staff-tab' };
+        const tabEl = document.getElementById(tabMap[role]);
+        if (tabEl) {
+            const tabTrigger = new bootstrap.Tab(tabEl);
+            tabTrigger.show();
+        }
+    }
+
+    // Set initial username if tab opened with query param
+    document.addEventListener('DOMContentLoaded', () => {
+        const active = "{{ active_tab }}";
+        if (active === 'warden') {
+            fillCreds('rashmi', 'rashmi@01', 'Warden');
+        } else if (active === 'staff') {
+            fillCreds('manvith', 'manvith@01', 'Staff');
+        } else {
+            fillCreds('medha', 'medha@1', 'Student');
+        }
+    });
+</script>
+{% endblock %}

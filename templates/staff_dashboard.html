@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+
+{% block title %}Staff Dashboard - Work Analysis &amp; Execution{% endblock %}
+
+{% block notifications_dropdown %}
+    {% if notifications %}
+        {% for n in notifications[:5] %}
+            <li class="dropdown-item py-2 px-3 border-bottom small notification-item {% if not n.is_read %}unread bg-light{% endif %}">
+                <div class="fw-semibold text-dark"><i class="bi bi-tools text-primary me-1"></i> {{ n.message }}</div>
+                <div class="text-muted" style="font-size: 0.75rem;">{{ n.created_at }}</div>
+            </li>
+        {% endfor %}
+    {% else %}
+        <li class="p-3 text-center text-muted small">No new assignment notifications</li>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Top Welcome Header -->
+    <div class="col-12">
+        <div class="custom-card p-4 bg-white d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-success bg-opacity-10 p-3 text-success">
+                    <i class="bi bi-tools fs-2"></i>
+                </div>
+                <div>
+                    <h4 class="fw-bold mb-1 text-dark">{{ session.get('full_name') }}</h4>
+                    <div class="text-muted small d-flex flex-wrap gap-3">
+                        <span><i class="bi bi-wrench-adjustable me-1 text-primary"></i> Specialization: <strong>{{ perf.specialization }}</strong></span>
+                        <span><i class="bi bi-shield-check me-1 text-success"></i> Status: <span class="badge bg-success">{{ perf.availability_status }}</span></span>
+                        <span><i class="bi bi-envelope me-1 text-primary"></i> {{ session.get('email') }}</span>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 fs-6">
+                    <i class="bi bi-lock-fill me-1"></i> Strict Role Isolation: Showing Only Assigned Tasks
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. Work Analysis - Main Task KPIs -->
+    <div class="col-12">
+        <div class="row g-3">
+            <div class="col-6 col-md-3">
+                <div class="kpi-card kpi-primary">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="kpi-label">Assigned Tasks</div>
+                            <div class="kpi-value">{{ perf.total_assigned_tasks }}</div>
+                            <small class="opacity-75">Total allocated</small>
+                        </div>
+                        <i class="bi bi-card-checklist kpi-icon"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="kpi-card kpi-warning">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="kpi-label">Pending Tasks</div>
+                            <div class="kpi-value">{{ perf.pending_tasks }}</div>
+                            <small class="opacity-75">Work not yet started</small>
+                        </div>
+                        <i class="bi bi-hourglass-top kpi-icon"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="kpi-card kpi-primary">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="kpi-label">In Progress</div>
+                            <div class="kpi-value">{{ perf.in_progress_tasks }}</div>
+                            <small class="opacity-75">Currently handling</small>
+                        </div>
+                        <i class="bi bi-gear-fill kpi-icon"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="kpi-card kpi-success">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="kpi-label">Completed Tasks</div>
+                            <div class="kpi-value">{{ perf.completed_tasks + perf.resolved_tasks }}</div>
+                            <small class="opacity-75">Successfully resolved</small>
+                        </div>
+                        <i class="bi bi-check2-all kpi-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Priority Analysis & 3. Performance Analytics Row -->
+    <div class="col-12 col-lg-6">
+        <div class="custom-card p-4 h-100">
+            <h5 class="fw-bold mb-3 text-dark">
+                <i class="bi bi-flag-fill text-danger me-2"></i>Priority Analysis
+            </h5>
+            <p class="text-muted small mb-3">Breakdown of assigned tasks based on urgency and priority:</p>
+            
+            <div class="row g-2 mb-3">
+                <div class="col-6 col-md-3">
+                    <div class="p-3 border rounded-3 bg-danger-subtle text-danger text-center">
+                        <div class="small fw-semibold">Urgent</div>
+                        <div class="fs-4 fw-bold">{{ perf.urgent_tasks }}</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="p-3 border rounded-3 bg-warning-subtle text-warning-emphasis text-center">
+                        <div class="small fw-semibold">High</div>
+                        <div class="fs-4 fw-bold">{{ perf.high_priority_tasks }}</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="p-3 border rounded-3 bg-primary-subtle text-primary text-center">
+                        <div class="small fw-semibold">Medium</div>
+                        <div class="fs-4 fw-bold">{{ perf.medium_priority_tasks }}</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="p-3 border rounded-3 bg-secondary-subtle text-secondary text-center">
+                        <div class="small fw-semibold">Low</div>
+                        <div class="fs-4 fw-bold">{{ perf.low_priority_tasks }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Priority Distribution Bar -->
+            <label class="form-label small text-muted">Active Workload Distribution</label>
+            <div class="progress" style="height: 12px;">
+                <div class="progress-bar bg-danger" style="width: {% if perf.total_assigned_tasks > 0 %}{{ (perf.urgent_tasks / perf.total_assigned_tasks * 100) }}{% else %}0{% endif %}%;" title="Urgent"></div>
+                <div class="progress-bar bg-warning" style="width: {% if perf.total_assigned_tasks > 0 %}{{ (perf.high_priority_tasks / perf.total_assigned_tasks * 100) }}{% else %}0{% endif %}%;" title="High"></div>
+                <div class="progress-bar bg-primary" style="width: {% if perf.total_assigned_tasks > 0 %}{{ (perf.medium_priority_tasks / perf.total_assigned_tasks * 100) }}{% else %}0{% endif %}%;" title="Medium"></div>
+                <div class="progress-bar bg-secondary" style="width: {% if perf.total_assigned_tasks > 0 %}{{ (perf.low_priority_tasks / perf.total_assigned_tasks * 100) }}{% else %}0{% endif %}%;" title="Low"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+        <div class="custom-card p-4 h-100">
+            <h5 class="fw-bold mb-3 text-dark">
+                <i class="bi bi-graph-up-arrow text-success me-2"></i>Performance Analytics
+            </h5>
+            <p class="text-muted small mb-3">Live metrics computed from MySQL analytical view <code>vw_staff_performance</code>:</p>
+
+            <div class="row g-3 align-items-center">
+                <div class="col-6 text-center border-end">
+                    <div class="display-5 fw-bold text-success">{{ perf.completion_rate_pct }}%</div>
+                    <div class="small fw-semibold text-secondary mt-1">Completion Rate</div>
+                    <div class="progress mt-2 mx-auto" style="height: 8px; max-width: 160px;">
+                        <div class="progress-bar bg-success" style="width: {{ perf.completion_rate_pct }}%;"></div>
+                    </div>
+                </div>
+                <div class="col-6 text-center">
+                    <div class="display-5 fw-bold text-primary">{{ perf.avg_resolution_hours }} <span class="fs-6">hrs</span></div>
+                    <div class="small fw-semibold text-secondary mt-1">Average Resolution Time</div>
+                    <div class="small text-muted mt-2">
+                        <i class="bi bi-stopwatch me-1"></i> From assignment to completion
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Tasks Table -->
+    <div class="col-12">
+        <div class="custom-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0 text-dark">
+                    <i class="bi bi-lightning-charge-fill text-warning me-2"></i>Current Active Tasks
+                </h5>
+                <span class="badge bg-primary">{{ active_tasks|length }} Active</span>
+            </div>
+
+            {% if active_tasks %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle border">
+                        <thead class="table-light small">
+                            <tr>
+                                <th>Task ID</th>
+                                <th>Room &amp; Block</th>
+                                <th>Category &amp; Issue</th>
+                                <th>Priority</th>
+                                <th>Current Status</th>
+                                <th>Warden Instructions</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in active_tasks %}
+                                <tr>
+                                    <td class="fw-bold">#{{ t.complaint_id }}</td>
+                                    <td>
+                                        <div class="fw-semibold text-dark">Room {{ t.room_number }}</div>
+                                        <small class="text-muted">Block {{ t.hostel_block }} &bull; {{ t.student_name }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold text-dark">{{ t.title }}</div>
+                                        <div class="text-secondary small text-truncate" style="max-width: 280px;">{{ t.description }}</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-priority-{{ t.priority|lower }}">
+                                            {{ t.priority }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-status-{{ t.status|lower|replace(' ', '') }}">
+                                            {{ t.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="small text-muted">{{ t.warden_notes or 'Standard maintenance protocol' }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-primary fw-semibold" 
+                                                    data-bs-toggle="modal" data-bs-target="#updateTaskModal"
+                                                    data-complaint-id="{{ t.complaint_id }}"
+                                                    data-current-status="{{ t.status }}"
+                                                    data-title="{{ t.title }}">
+                                                <i class="bi bi-pencil-square me-1"></i> Update Status
+                                            </button>
+                                            <button class="btn btn-outline-secondary" 
+                                                    data-bs-toggle="modal" data-bs-target="#historyModal"
+                                                    data-complaint-id="{{ t.complaint_id }}"
+                                                    data-complaint-title="{{ t.title }}">
+                                                <i class="bi bi-clock-history"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-check-circle fs-2 text-success opacity-75"></i>
+                    <p class="mt-2 mb-0">No active tasks currently pending. You are all caught up!</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 4. Work History Table -->
+    <div class="col-12">
+        <div class="custom-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0 text-dark">
+                    <i class="bi bi-clock-history text-secondary me-2"></i>Work History (Previously Handled Complaints)
+                </h5>
+                <span class="badge bg-secondary">{{ work_history|length }} Completed</span>
+            </div>
+
+            {% if work_history %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle border">
+                        <thead class="table-light small">
+                            <tr>
+                                <th>Task ID</th>
+                                <th>Room &amp; Block</th>
+                                <th>Issue Summary</th>
+                                <th>Priority</th>
+                                <th>My Resolution Notes</th>
+                                <th>Completed At</th>
+                                <th>Final Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for h in work_history %}
+                                <tr>
+                                    <td class="fw-bold">#{{ h.complaint_id }}</td>
+                                    <td>Block {{ h.hostel_block }}, Rm {{ h.room_number }}</td>
+                                    <td class="fw-semibold text-dark">{{ h.title }}</td>
+                                    <td><span class="badge badge-priority-{{ h.priority|lower }}">{{ h.priority }}</span></td>
+                                    <td class="small text-secondary">{{ h.staff_notes or 'Resolved without remarks' }}</td>
+                                    <td class="small text-muted">{{ h.completed_at }}</td>
+                                    <td>
+                                        <span class="badge badge-status-{{ h.status|lower|replace(' ', '') }}">
+                                            {{ h.status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4 text-muted small">
+                    <p class="mb-0">No past completed complaints in work history yet.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Update Task Status (Executes sp_update_task_status) -->
+<div class="modal fade" id="updateTaskModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-wrench me-2"></i>Update Task Status</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('staff_update_task') }}" method="POST">
+                <input type="hidden" name="complaint_id" id="updateModalComplaintId">
+                <div class="modal-body p-4">
+                    <p class="small text-muted mb-3">
+                        Updating status for: <strong class="text-dark" id="updateModalTitle"></strong>
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">New Task Status <span class="text-danger">*</span></label>
+                        <select name="status" id="updateModalStatusSelect" class="form-select" required>
+                            <option value="In Progress">In Progress (Work currently underway)</option>
+                            <option value="Completed">Completed (Work finished, ready for Warden verification)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Technician Notes / Work Summary <span class="text-danger">*</span></label>
+                        <textarea name="notes" class="form-control" rows="3" placeholder="e.g. Inspected washer, replaced ceramic valve, tested for leaks" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-4 fw-semibold">
+                        Update Status (ACID Transaction)
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

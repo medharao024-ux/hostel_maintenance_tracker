@@ -1,0 +1,594 @@
+{% extends "base.html" %}
+
+{% block title %}Warden Dashboard - HostelCare{% endblock %}
+
+{% block notifications_dropdown %}
+    {% if notifications %}
+        {% for n in notifications[:5] %}
+            <li class="dropdown-item py-2 px-3 border-bottom small notification-item {% if not n.is_read %}unread bg-light{% endif %}">
+                <div class="fw-semibold text-dark"><i class="bi bi-bell-fill text-warning me-1"></i> {{ n.message }}</div>
+                <div class="text-muted" style="font-size: 0.75rem;">{{ n.created_at }}</div>
+            </li>
+        {% endfor %}
+    {% else %}
+        <li class="p-3 text-center text-muted small">No new notifications</li>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Warden Welcome Header -->
+    <div class="col-12">
+        <div class="custom-card p-4 bg-white d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-warning bg-opacity-10 p-3 text-warning">
+                    <i class="bi bi-person-badge fs-2 text-dark"></i>
+                </div>
+                <div>
+                    <h4 class="fw-bold mb-1 text-dark">{{ session.get('full_name') }}</h4>
+                    <span class="text-muted small">
+                        <i class="bi bi-shield-check me-1 text-primary"></i> Chief Warden &bull; Central Hostel Administration &bull; Direct Database Access
+                    </span>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary btn-sm px-3 fw-semibold" data-bs-toggle="modal" data-bs-target="#addStaffModal">
+                    <i class="bi bi-person-plus-fill me-1"></i> Add Maintenance Staff
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overview KPI Cards -->
+    <div class="col-12">
+        <div class="row g-3">
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="kpi-card kpi-primary">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="kpi-label">Total</div>
+                            <div class="kpi-value">{{ kpi.total }}</div>
+                        </div>
+                        <i class="bi bi-clipboard-data kpi-icon"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="kpi-card kpi-warning">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="kpi-label">Pending Triage</div>
+                            <div class="kpi-value">{{ kpi.pending }}</div>
+                        </div>
+                        <i class="bi bi-exclamation-circle kpi-icon"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="kpi-card kpi-info">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="kpi-label">Assigned</div>
+                            <div class="kpi-value">{{ kpi.assigned }}</div>
+                        </div>
+                        <i class="bi bi-person-gear kpi-icon"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="kpi-card kpi-primary">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="kpi-label">In Progress</div>
+                            <div class="kpi-value">{{ kpi.in_progress }}</div>
+                        </div>
+                        <i class="bi bi-tools kpi-icon"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="kpi-card kpi-info">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="kpi-label">Awaiting Verification</div>
+                            <div class="kpi-value">{{ kpi.completed }}</div>
+                        </div>
+                        <i class="bi bi-patch-check kpi-icon"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="kpi-card kpi-success">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <div class="kpi-label">Resolved</div>
+                            <div class="kpi-value">{{ kpi.resolved }}</div>
+                        </div>
+                        <i class="bi bi-check2-all kpi-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Navigation Tabs: Complaints / Staff / Analytics -->
+    <div class="col-12">
+        <div class="custom-card p-4">
+            <ul class="nav nav-tabs nav-fill mb-4" id="wardenTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active fw-bold" id="complaints-tab" data-bs-toggle="tab" data-bs-target="#complaints-panel" type="button" role="tab">
+                        <i class="bi bi-list-check me-2"></i>Complaints Management &amp; Assignment
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-bold" id="staff-tab" data-bs-toggle="tab" data-bs-target="#staff-panel" type="button" role="tab">
+                        <i class="bi bi-people-fill me-2"></i>Staff Workload &amp; Directory
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-bold" id="reports-tab" data-bs-toggle="tab" data-bs-target="#reports-panel" type="button" role="tab">
+                        <i class="bi bi-bar-chart-fill me-2"></i>Reports &amp; DBMS Analytics
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="wardenTabContent">
+                <!-- TAB 1: COMPLAINTS MANAGEMENT -->
+                <div class="tab-pane fade show active" id="complaints-panel" role="tabpanel">
+                    <!-- Filter Controls Bar -->
+                    <form method="GET" action="{{ url_for('warden_dashboard') }}" class="row g-2 mb-4 bg-light p-3 rounded-3 border align-items-center">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold mb-1">Status Filter</label>
+                            <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Statuses</option>
+                                <option value="Pending" {% if status_filter == 'Pending' %}selected{% endif %}>Pending Only</option>
+                                <option value="Assigned" {% if status_filter == 'Assigned' %}selected{% endif %}>Assigned</option>
+                                <option value="In Progress" {% if status_filter == 'In Progress' %}selected{% endif %}>In Progress</option>
+                                <option value="Completed" {% if status_filter == 'Completed' %}selected{% endif %}>Completed (Needs Verification)</option>
+                                <option value="Resolved" {% if status_filter == 'Resolved' %}selected{% endif %}>Resolved</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold mb-1">Hostel Block</label>
+                            <select name="block" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="all" {% if block_filter == 'all' %}selected{% endif %}>All Blocks</option>
+                                <option value="A-Block" {% if block_filter == 'A-Block' %}selected{% endif %}>A-Block</option>
+                                <option value="B-Block" {% if block_filter == 'B-Block' %}selected{% endif %}>B-Block</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold mb-1">Category</label>
+                            <select name="category" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="all" {% if category_filter == 'all' %}selected{% endif %}>All Categories</option>
+                                <option value="Plumbing" {% if category_filter == 'Plumbing' %}selected{% endif %}>Plumbing</option>
+                                <option value="Electrical" {% if category_filter == 'Electrical' %}selected{% endif %}>Electrical</option>
+                                <option value="Carpentry" {% if category_filter == 'Carpentry' %}selected{% endif %}>Carpentry</option>
+                                <option value="Cleaning" {% if category_filter == 'Cleaning' %}selected{% endif %}>Cleaning</option>
+                                <option value="Internet/Wi-Fi" {% if category_filter == 'Internet/Wi-Fi' %}selected{% endif %}>Internet/Wi-Fi</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end gap-2">
+                            <a href="{{ url_for('warden_dashboard') }}" class="btn btn-outline-secondary btn-sm w-100">Reset Filters</a>
+                        </div>
+                    </form>
+
+                    <!-- Complaints Master Table -->
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle border">
+                            <thead class="table-dark small">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Student &amp; Room</th>
+                                    <th>Category &amp; Title</th>
+                                    <th>Priority</th>
+                                    <th>Status</th>
+                                    <th>Assigned Staff</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if complaints %}
+                                    {% for c in complaints %}
+                                        <tr>
+                                            <td class="fw-bold">#{{ c.complaint_id }}</td>
+                                            <td>
+                                                <div class="fw-semibold text-dark">{{ c.student_name }}</div>
+                                                <small class="text-muted">Block {{ c.hostel_block }}, Rm {{ c.room_number }}</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-light text-primary border me-1">{{ c.category }}</span>
+                                                <span class="fw-semibold text-dark">{{ c.title }}</span>
+                                                <div class="text-muted small text-truncate" style="max-width: 320px;">{{ c.description }}</div>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-priority-{{ c.priority|lower }}">
+                                                    {{ c.priority }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-status-{{ c.status|lower|replace(' ', '') }}">
+                                                    {{ c.status }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if c.assigned_staff_name %}
+                                                    <div class="fw-semibold small text-primary">{{ c.assigned_staff_name }}</div>
+                                                    <small class="text-muted">{{ c.staff_specialization }}</small>
+                                                {% else %}
+                                                    <span class="badge bg-secondary-subtle text-secondary">Unassigned</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <!-- Assign Staff Button (Active when Pending or Assigned) -->
+                                                    {% if c.status in ['Pending', 'Assigned'] %}
+                                                        <button class="btn btn-outline-primary" 
+                                                                data-bs-toggle="modal" data-bs-target="#assignStaffModal"
+                                                                data-complaint-id="{{ c.complaint_id }}"
+                                                                data-category="{{ c.category }}"
+                                                                data-title="{{ c.title }}">
+                                                            <i class="bi bi-person-plus me-1"></i> Assign
+                                                        </button>
+                                                    {% endif %}
+
+                                                    <!-- Verify & Resolve Button (When Staff has Completed the task) -->
+                                                    {% if c.status == 'Completed' %}
+                                                        <button class="btn btn-success fw-semibold" 
+                                                                data-bs-toggle="modal" data-bs-target="#resolveComplaintModal"
+                                                                data-complaint-id="{{ c.complaint_id }}"
+                                                                data-title="{{ c.title }}">
+                                                            <i class="bi bi-check2-circle me-1"></i> Verify &amp; Resolve
+                                                        </button>
+                                                    {% endif %}
+
+                                                    <!-- Audit Trail Button -->
+                                                    <button class="btn btn-outline-secondary" 
+                                                            data-bs-toggle="modal" data-bs-target="#historyModal"
+                                                            data-complaint-id="{{ c.complaint_id }}"
+                                                            data-complaint-title="{{ c.title }}">
+                                                        <i class="bi bi-clock-history"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="7" class="text-center py-4 text-muted">No complaints match the filter criteria.</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TAB 2: STAFF WORKLOAD & DIRECTORY -->
+                <div class="tab-pane fade" id="staff-panel" role="tabpanel">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold mb-0 text-dark">Hostel Maintenance Technicians &amp; Workload</h6>
+                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addStaffModal">
+                            <i class="bi bi-person-plus-fill me-1"></i> Add New Staff Member
+                        </button>
+                    </div>
+
+                    <div class="row g-3">
+                        {% for s in staff_workload %}
+                            <div class="col-md-6 col-lg-4">
+                                <div class="border rounded-3 p-3 bg-white shadow-sm h-100">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <h6 class="fw-bold mb-0 text-dark">{{ s.full_name }}</h6>
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle mt-1">
+                                                {{ s.specialization }}
+                                            </span>
+                                        </div>
+                                        <span class="badge {% if s.availability_status == 'Active' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                            {{ s.availability_status }}
+                                        </span>
+                                    </div>
+                                    <div class="text-muted small mb-3">
+                                        <div><i class="bi bi-telephone-fill text-success me-1"></i> {{ s.phone }}</div>
+                                    </div>
+                                    <div class="bg-light p-2 rounded-2 d-flex justify-content-between align-items-center small">
+                                        <span class="text-muted">Active Workload:</span>
+                                        <span class="badge bg-dark rounded-pill">{{ s.active_workload }} Tasks</span>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- TAB 3: REPORTS & DBMS ANALYTICS -->
+                <div class="tab-pane fade" id="reports-panel" role="tabpanel">
+                    <div class="row g-4 mb-4">
+                        <!-- Chart 1: Complaints by Category -->
+                        <div class="col-md-6">
+                            <div class="border rounded-3 p-3 bg-white">
+                                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-pie-chart-fill me-2 text-primary"></i>Complaints by Category</h6>
+                                <canvas id="categoryChart" height="220"></canvas>
+                            </div>
+                        </div>
+                        <!-- Chart 2: Status Distribution -->
+                        <div class="col-md-6">
+                            <div class="border rounded-3 p-3 bg-white">
+                                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-bar-chart-fill me-2 text-success"></i>Resolution Status Distribution</h6>
+                                <canvas id="statusChart" height="220"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Staff Performance Table (From View vw_staff_performance) -->
+                    <div class="border rounded-3 p-3 bg-white mb-4">
+                        <h6 class="fw-bold text-dark mb-3">
+                            <i class="bi bi-speedometer2 me-2 text-info"></i>Staff Performance Analytics (Database View: <code>vw_staff_performance</code>)
+                        </h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped border align-middle">
+                                <thead class="table-light small">
+                                    <tr>
+                                        <th>Staff Name</th>
+                                        <th>Specialization</th>
+                                        <th>Status</th>
+                                        <th>Total Assigned</th>
+                                        <th>Pending</th>
+                                        <th>In Progress</th>
+                                        <th>Completed</th>
+                                        <th>Completion Rate</th>
+                                        <th>Avg Resolution (Hrs)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for sp in staff_performance %}
+                                        <tr>
+                                            <td class="fw-bold">{{ sp.staff_name }}</td>
+                                            <td>{{ sp.specialization }}</td>
+                                            <td><span class="badge bg-secondary">{{ sp.availability_status }}</span></td>
+                                            <td>{{ sp.total_assigned_tasks }}</td>
+                                            <td>{{ sp.pending_tasks }}</td>
+                                            <td>{{ sp.in_progress_tasks }}</td>
+                                            <td>{{ sp.completed_tasks + sp.resolved_tasks }}</td>
+                                            <td>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <span class="fw-bold">{{ sp.completion_rate_pct }}%</span>
+                                                    <div class="progress flex-grow-1" style="height: 6px;">
+                                                        <div class="progress-bar bg-success" style="width: {{ sp.completion_rate_pct }}%;"></div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="fw-bold text-primary">{{ sp.avg_resolution_hours }} hrs</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Block-wise Summary (From View vw_warden_summary) -->
+                    <div class="border rounded-3 p-3 bg-white">
+                        <h6 class="fw-bold text-dark mb-3">
+                            <i class="bi bi-grid-3x3-gap-fill me-2 text-secondary"></i>Hostel Block &amp; Category Matrix (Database View: <code>vw_warden_summary</code>)
+                        </h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered align-middle">
+                                <thead class="table-light small">
+                                    <tr>
+                                        <th>Hostel Block</th>
+                                        <th>Category</th>
+                                        <th>Total Filed</th>
+                                        <th>Pending</th>
+                                        <th>In Progress</th>
+                                        <th>Resolved</th>
+                                        <th>Critical Unresolved</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for bs in block_summary %}
+                                        <tr>
+                                            <td class="fw-bold">{{ bs.hostel_block }}</td>
+                                            <td>{{ bs.category }}</td>
+                                            <td>{{ bs.total_complaints }}</td>
+                                            <td>{{ bs.pending_count }}</td>
+                                            <td>{{ bs.in_progress_count }}</td>
+                                            <td class="text-success fw-bold">{{ bs.resolved_count }}</td>
+                                            <td>
+                                                {% if bs.critical_unresolved_count > 0 %}
+                                                    <span class="badge bg-danger">{{ bs.critical_unresolved_count }} Critical</span>
+                                                {% else %}
+                                                    <span class="text-muted small">0</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Assign Staff Technician (Executes sp_assign_complaint) -->
+<div class="modal fade" id="assignStaffModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-person-gear me-2"></i>Assign Technician</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('warden_assign_staff') }}" method="POST">
+                <input type="hidden" name="complaint_id" id="assignModalComplaintId">
+                <div class="modal-body p-4">
+                    <p class="small text-muted mb-3">
+                        Assigning task for: <strong class="text-dark" id="assignModalComplaintText"></strong>
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Select Maintenance Technician <span class="text-danger">*</span></label>
+                        <select name="staff_id" id="assignModalStaffSelect" class="form-select" required>
+                            <option value="" disabled selected>Choose technician...</option>
+                            {% for s in staff_workload %}
+                                <option value="{{ s.staff_id }}" 
+                                        data-specialization="{{ s.specialization }}"
+                                        {% if s.availability_status != 'Active' %}disabled{% endif %}>
+                                    {{ s.full_name }} ({{ s.specialization }}) - {{ s.active_workload }} active tasks {% if s.availability_status != 'Active' %}[{{ s.availability_status }} - Unavailable]{% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text small">
+                            <i class="bi bi-shield-check text-success"></i> Database assertion prevents assignment to technicians who are On Leave.
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Warden Instructions &amp; Priority Remarks</label>
+                        <textarea name="instructions" class="form-control" rows="3" placeholder="e.g. Please bring replacement washers and visit before 4:00 PM"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-4 fw-semibold">
+                        Confirm Assignment (ACID Transaction)
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Verify & Resolve Complaint (Executes sp_resolve_complaint) -->
+<div class="modal fade" id="resolveComplaintModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-patch-check me-2"></i>Verify &amp; Resolve Complaint</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('warden_resolve_complaint') }}" method="POST">
+                <input type="hidden" name="complaint_id" id="resolveModalComplaintId">
+                <div class="modal-body p-4">
+                    <p class="small text-muted mb-3">
+                        Completing verification for: <strong class="text-dark" id="resolveModalTitle"></strong>
+                    </p>
+                    <div class="alert alert-success small">
+                        <i class="bi bi-info-circle me-1"></i> Staff technician has finished the work. Mark this complaint officially <strong>Resolved</strong> to close the ticket and notify the resident student.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Warden Verification Remarks</label>
+                        <textarea name="verification_notes" class="form-control" rows="3" placeholder="e.g. Inspected on site, leakage resolved satisfactorily." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success btn-sm px-4 fw-semibold">
+                        Verify &amp; Mark Resolved
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Add New Staff Member -->
+<div class="modal fade" id="addStaffModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-person-plus me-2"></i>Register New Staff Member</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('warden_add_staff') }}" method="POST">
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Full Name <span class="text-danger">*</span></label>
+                            <input type="text" name="full_name" class="form-control" placeholder="e.g. Rajesh Kumar" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Username <span class="text-danger">*</span></label>
+                            <input type="text" name="username" class="form-control" placeholder="e.g. plumber2" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Specialization <span class="text-danger">*</span></label>
+                            <select name="specialization" class="form-select" required>
+                                <option value="Plumbing">Plumbing</option>
+                                <option value="Electrical">Electrical</option>
+                                <option value="Carpentry">Carpentry</option>
+                                <option value="Cleaning">Cleaning</option>
+                                <option value="Internet/Wi-Fi">Internet/Wi-Fi</option>
+                                <option value="Appliance">Appliance</option>
+                                <option value="General">General Maintenance</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Phone Number <span class="text-danger">*</span></label>
+                            <input type="text" name="phone" class="form-control" placeholder="10-digit phone" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Email Address <span class="text-danger">*</span></label>
+                            <input type="email" name="email" class="form-control" placeholder="staff@hostel.edu" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Initial Password</label>
+                            <input type="password" name="password" class="form-control" value="password123" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-4 fw-semibold">Save Staff Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Chart 1: Complaints by Category
+        const catLabels = [{% for ca in category_analytics %}"{{ ca.category }}",{% endfor %}];
+        const catData = [{% for ca in category_analytics %}{{ ca.total_count }},{% endfor %}];
+        
+        const ctxCat = document.getElementById('categoryChart');
+        if (ctxCat && catLabels.length > 0) {
+            new Chart(ctxCat, {
+                type: 'doughnut',
+                data: {
+                    labels: catLabels,
+                    datasets: [{
+                        data: catData,
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#64748b']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+
+        // Chart 2: Status Distribution
+        const ctxStatus = document.getElementById('statusChart');
+        if (ctxStatus) {
+            new Chart(ctxStatus, {
+                type: 'bar',
+                data: {
+                    labels: ['Pending', 'Assigned', 'In Progress', 'Completed', 'Resolved'],
+                    datasets: [{
+                        label: 'Count',
+                        data: [{{ kpi.pending }}, {{ kpi.assigned }}, {{ kpi.in_progress }}, {{ kpi.completed }}, {{ kpi.resolved }}],
+                        backgroundColor: ['#f59e0b', '#0284c7', '#7c3aed', '#10b981', '#059669']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
